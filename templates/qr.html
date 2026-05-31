@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code – Restaurant OS</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="icon" type="image/svg+xml"  href="/static/img/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon16.png">
+    <meta name="theme-color" content="#1A1A1A">
+    <style id="dynamic-colors"></style>
+    <!-- qrcode.js — pure JS, no server needed, works offline too -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+            integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSuh5KDWsDlogqOTFnLmsQFleAKMWvAHJoFHQ=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        .qr-page       { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; background:var(--darker); }
+        .qr-card       { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:40px; max-width:480px; width:100%; text-align:center; }
+        .qr-title      { font-size:1.4rem; font-weight:800; margin-bottom:8px; }
+        .qr-subtitle   { color:var(--text-muted); font-size:.9rem; margin-bottom:32px; }
+        .qr-tabs       { display:flex; gap:6px; margin-bottom:28px; background:var(--surface2); border-radius:10px; padding:4px; }
+        .qr-tab        { flex:1; padding:9px; border:none; border-radius:7px; background:transparent; color:var(--text-muted); font-weight:600; font-size:.85rem; cursor:pointer; transition:all .2s; font-family:inherit; }
+        .qr-tab.active { background:var(--gold); color:var(--darker); }
+        .qr-canvas-wrap{ background:#fff; border-radius:12px; padding:20px; display:inline-block; margin-bottom:24px; }
+        #qr-canvas      { display:block; }
+        .qr-url        { font-size:.8rem; color:var(--text-muted); margin-bottom:24px; word-break:break-all; padding:10px 14px; background:var(--darker); border-radius:8px; border:1px solid var(--border); }
+        .qr-actions    { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+        .btn-dl        { background:var(--gold); color:var(--darker); border:none; padding:12px 24px; border-radius:10px; font-weight:700; font-size:.9rem; cursor:pointer; font-family:inherit; transition:background .2s; }
+        .btn-dl:hover  { background:var(--gold-light); }
+        .btn-copy      { background:var(--surface2); color:var(--text); border:1px solid var(--border); padding:12px 24px; border-radius:10px; font-weight:600; font-size:.9rem; cursor:pointer; font-family:inherit; transition:all .2s; }
+        .btn-copy:hover{ border-color:var(--gold); color:var(--gold); }
+        .qr-back       { margin-top:28px; color:var(--text-muted); font-size:.85rem; }
+        .qr-back a     { color:var(--gold); }
+        .qr-print-note { margin-top:20px; padding:14px; background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.25); border-radius:10px; font-size:.82rem; color:var(--text-muted); line-height:1.5; }
+    </style>
+</head>
+<body>
+<div class="qr-page">
+    <div class="qr-card">
+        <div class="qr-title" id="qr-title">🍽️ Restaurant</div>
+        <div class="qr-subtitle">Scannez pour commander ou voir le menu</div>
+
+        <div class="qr-tabs">
+            <button class="qr-tab active" onclick="setMode('menu', this)">📖 Page Menu</button>
+            <button class="qr-tab"        onclick="setMode('wa', this)">💬 WhatsApp</button>
+        </div>
+
+        <div class="qr-canvas-wrap">
+            <div id="qr-canvas"></div>
+        </div>
+        <div class="qr-url" id="qr-url-display">…</div>
+
+        <div class="qr-actions">
+            <button class="btn-dl"   onclick="downloadQR()">⬇️ Télécharger PNG</button>
+            <button class="btn-copy" onclick="copyUrl()">📋 Copier le lien</button>
+        </div>
+
+        <div class="qr-print-note">
+            💡 <strong>Astuce :</strong> Imprimez ce QR code et placez-le sur chaque table.
+            Vos clients commandent directement depuis leur téléphone.
+        </div>
+
+        <div class="qr-back">
+            <a href="/">← Retour au menu</a> · <a href="/admin">Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<script>
+let qrInstance = null;
+let currentMode = 'menu';
+let cfg = {};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        cfg = await fetch('/config').then(r => r.json());
+        if (cfg.colors) {
+            document.getElementById('dynamic-colors').textContent =
+                `:root{--gold:${cfg.colors.primary};--gold-light:${cfg.colors.primary_light};}`;
+        }
+        document.getElementById('qr-title').textContent =
+            `${cfg.logo_emoji || '🍽️'} ${cfg.restaurant_name || 'Restaurant'}`;
+        document.title = 'QR Code – ' + (cfg.restaurant_name || 'Restaurant');
+    } catch(e) { console.warn('Config load failed', e); }
+    generateQR();
+});
+
+function getUrl() {
+    const base = window.location.origin;
+    if (currentMode === 'menu') return base + '/';
+    const num = (cfg.whatsapp_number || '').replace(/\D/g, '');
+    const msg = encodeURIComponent('Bonjour 👋 je souhaite commander !');
+    return `https://wa.me/${num}?text=${msg}`;
+}
+
+function generateQR() {
+    const url  = getUrl();
+    const wrap = document.getElementById('qr-canvas');
+    wrap.innerHTML = '';
+    document.getElementById('qr-url-display').textContent = url;
+
+    try {
+        qrInstance = new QRCode(wrap, {
+            text:          url,
+            width:         220,
+            height:        220,
+            colorDark:     '#000000',
+            colorLight:    '#ffffff',
+            correctLevel:  QRCode.CorrectLevel.H,
+        });
+    } catch(e) {
+        wrap.innerHTML = '<div style="padding:20px;color:#e74c3c">❌ Erreur génération QR.<br>Vérifiez votre connexion internet.</div>';
+    }
+}
+
+function setMode(mode, el) {
+    currentMode = mode;
+    document.querySelectorAll('.qr-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    generateQR();
+}
+
+function downloadQR() {
+    // Try canvas first, fallback to img
+    setTimeout(() => {
+        const canvas = document.querySelector('#qr-canvas canvas');
+        const img    = document.querySelector('#qr-canvas img');
+
+        if (canvas) {
+            const link    = document.createElement('a');
+            link.download = `qr-${currentMode}.png`;
+            link.href     = canvas.toDataURL('image/png');
+            link.click();
+        } else if (img) {
+            // Cross-origin img: open in new tab for manual save
+            window.open(img.src, '_blank');
+        } else {
+            alert('QR non encore généré. Attendez un instant.');
+        }
+    }, 200);
+}
+
+function copyUrl() {
+    const url = getUrl();
+    navigator.clipboard.writeText(url).then(() => {
+        const btn = document.querySelector('.btn-copy');
+        const orig = btn.textContent;
+        btn.textContent = '✅ Copié !';
+        setTimeout(() => { btn.textContent = orig; }, 1800);
+    }).catch(() => {
+        prompt('Copiez ce lien :', url);
+    });
+}
+</script>
+
+<!-- Seevio watermark -->
+<div class="seevio-badge">
+    <a href="#" tabindex="-1" aria-hidden="true">
+        <svg viewBox="0 0 14 14" width="10" height="10" fill="none">
+            <circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-width="1.1"/>
+            <text x="7" y="10.5" text-anchor="middle" font-size="8"
+                  font-family="Georgia,serif" font-weight="700" fill="currentColor">S</text>
+        </svg>
+        Seevio
+    </a>
+</div>
+</body>
+</html>

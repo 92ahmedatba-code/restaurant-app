@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="icon" type="image/svg+xml"  href="/static/img/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon16.png">
+    <meta name="theme-color" content="#1A1A1A">
+    <style id="dynamic-colors"></style>
+</head>
+<body>
+
+<header class="header">
+    <div class="container header-inner">
+        <div class="logo" id="logo-text">🍽️ …</div>
+        <nav class="nav">
+            <a href="#menu">Menu</a>
+            <a href="#reservation">Réserver</a>
+            <a href="/qr" class="btn-admin">📱 QR</a>
+            <a href="/admin" class="btn-admin">⚙️ Admin</a>
+        </nav>
+    </div>
+</header>
+
+<section class="hero">
+    <div class="hero-content">
+        <p class="hero-tag" id="hero-tag">✦ … ✦</p>
+        <h1 id="hero-title">&nbsp;</h1>
+        <p class="hero-sub" id="hero-sub">&nbsp;</p>
+        <div class="hero-actions">
+            <a href="#menu"        class="btn btn-primary">📖 Voir le menu</a>
+            <a href="#reservation" class="btn btn-secondary">📅 Réserver</a>
+        </div>
+    </div>
+    <div class="hero-badges">
+        <div class="badge-item" id="badge-lunch">⏰ …</div>
+        <div class="badge-item" id="badge-dinner">🌙 …</div>
+        <div class="badge-item" id="badge-address">📍 …</div>
+    </div>
+</section>
+
+<section id="menu" class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2>Notre Menu</h2>
+            <p>Des produits frais sélectionnés chaque matin</p>
+        </div>
+        <div id="menu-container">
+            <div class="menu-loading">
+                <span class="spinner"></span> Chargement du menu…
+            </div>
+        </div>
+        <div class="order-cta" id="order-cta" style="display:none">
+            <div class="order-cta-text">
+                <h3>Envie de commander ? 🍽️</h3>
+                <p>Commandez sur WhatsApp — simple, rapide, confirmé en 5 minutes</p>
+            </div>
+            <button class="btn-whatsapp" onclick="openWhatsApp()">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                Commander sur WhatsApp
+            </button>
+        </div>
+    </div>
+</section>
+
+<section id="reservation" class="section section-dark">
+    <div class="container">
+        <div class="section-header">
+            <h2>Réserver une table</h2>
+            <p>Confirmation par téléphone sous 30 minutes</p>
+        </div>
+        <form class="reservation-form" id="res-form" onsubmit="submitReservation(event)" novalidate>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="res-name">Votre nom *</label>
+                    <input type="text" id="res-name" placeholder="Jean Dupont" autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="res-size">Nombre de personnes *</label>
+                    <input type="number" id="res-size" placeholder="2" min="1" max="50">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="res-time">Date et heure *</label>
+                    <input type="datetime-local" id="res-time">
+                </div>
+                <div class="form-group">
+                    <label for="res-phone">Téléphone</label>
+                    <input type="tel" id="res-phone" placeholder="+33 6 12 34 56 78" autocomplete="tel">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" id="res-submit">
+                📅 Confirmer la réservation
+            </button>
+            <div id="res-message" class="form-message" style="display:none" role="alert"></div>
+        </form>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container footer-inner">
+        <div class="footer-brand" id="footer-brand">🍽️ …</div>
+        <div class="footer-info">
+            <span id="footer-address">📍 …</span>
+            <span id="footer-phone">📞 …</span>
+            <span id="footer-hours">⏰ …</span>
+        </div>
+        <div class="footer-copy" id="footer-copy">© 2024</div>
+    </div>
+</footer>
+
+<button class="float-whatsapp" onclick="openWhatsApp()" title="Commander sur WhatsApp" aria-label="Commander sur WhatsApp">
+    <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</button>
+
+<script>
+const CATEGORY_ORDER = ['Entrées', 'Plats principaux', 'Desserts', 'Boissons'];
+const CATEGORY_ICONS = { 'Entrées':'🥗', 'Plats principaux':'🥩', 'Desserts':'🍮', 'Boissons':'🍷' };
+let WA_NUMBER   = '';
+let submitting  = false;   // double-submit guard
+
+// ── Init ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    const [cfg] = await Promise.all([
+        fetch('/config').then(r => r.json()).catch(() => ({})),
+    ]);
+    applyConfig(cfg);
+    await loadMenu();
+});
+
+// ── Config ──────────────────────────────────────────────────────────────────
+function applyConfig(cfg) {
+    if (cfg.colors) {
+        document.getElementById('dynamic-colors').textContent =
+            `:root{--gold:${cfg.colors.primary};--gold-light:${cfg.colors.primary_light};}`;
+    }
+    document.title = (cfg.restaurant_name || 'Restaurant') + ' – Menu & Réservations';
+    setText('logo-text',     `${cfg.logo_emoji || '🍽️'} ${cfg.restaurant_name || ''}`);
+    setText('hero-tag',      `✦ ${cfg.tagline || ''} ✦`);
+    setText('hero-title',    cfg.welcome_message || '');
+    setText('hero-sub',      cfg.welcome_sub || '');
+    setText('badge-lunch',   `⏰ ${cfg.hours_lunch || ''}`);
+    setText('badge-dinner',  `🌙 ${cfg.hours_dinner || ''}`);
+    setText('badge-address', `📍 ${cfg.address || ''}`);
+    setText('footer-brand',  `${cfg.logo_emoji || '🍽️'} ${cfg.restaurant_name || ''}`);
+    setText('footer-address',`📍 ${cfg.address || ''}`);
+    setText('footer-phone',  `📞 ${cfg.phone || ''}`);
+    setText('footer-hours',  `⏰ ${(cfg.hours_lunch||'').replace('Midi ','')} · ${(cfg.hours_dinner||'').replace('Soir ','')}`);
+    setText('footer-copy',   `© ${new Date().getFullYear()} ${cfg.restaurant_name || ''}`);
+    WA_NUMBER = (cfg.whatsapp_number || '').replace(/\D/g, '');
+}
+
+// ── Menu ────────────────────────────────────────────────────────────────────
+async function loadMenu() {
+    try {
+        const items = await fetch('/menu').then(r => {
+            if (!r.ok) throw new Error(r.status);
+            return r.json();
+        });
+        renderMenu(items);
+    } catch {
+        document.getElementById('menu-container').innerHTML =
+            '<div class="menu-error">❌ Impossible de charger le menu. Vérifiez que le serveur est démarré.</div>';
+    }
+}
+
+function renderMenu(items) {
+    const container = document.getElementById('menu-container');
+    if (!items.length) {
+        container.innerHTML = '<div class="menu-loading">Aucun plat disponible pour le moment.</div>';
+        return;
+    }
+
+    const grouped = {};
+    items.forEach(item => {
+        (grouped[item.category] = grouped[item.category] || []).push(item);
+    });
+
+    const cats = [
+        ...CATEGORY_ORDER.filter(c => grouped[c]),
+        ...Object.keys(grouped).filter(c => !CATEGORY_ORDER.includes(c)),
+    ];
+
+    container.innerHTML = cats.map(cat => `
+        <div class="menu-category">
+            <h3 class="category-title">${CATEGORY_ICONS[cat] || '🍽️'} ${esc(cat)}</h3>
+            <div class="menu-grid">
+                ${grouped[cat].map(item => `
+                    <div class="menu-card${item.featured ? ' featured' : ''}">
+                        ${item.image_path ? `
+                            <div class="menu-card-img">
+                                <img src="${esc(item.image_path)}" alt="${esc(item.name)}" loading="lazy"
+                                     onerror="this.parentElement.style.display='none'">
+                            </div>` : ''}
+                        <div class="menu-card-body">
+                            <div class="menu-card-info">
+                                <h4>${esc(item.name)}${item.featured ? ' <span class="sig-badge">Signature</span>' : ''}</h4>
+                                ${item.description ? `<p>${esc(item.description)}</p>` : ''}
+                            </div>
+                            <span class="price">${fmtPrice(item.price)}</span>
+                        </div>
+                    </div>`).join('')}
+            </div>
+        </div>`).join('');
+
+    document.getElementById('order-cta').style.display = 'flex';
+}
+
+// ── Reservation ──────────────────────────────────────────────────────────────
+async function submitReservation(e) {
+    e.preventDefault();
+    if (submitting) return;
+
+    const btn   = document.getElementById('res-submit');
+    const msgEl = document.getElementById('res-message');
+
+    // Validation
+    const name  = document.getElementById('res-name').value.trim();
+    const size  = parseInt(document.getElementById('res-size').value);
+    const time  = document.getElementById('res-time').value;
+
+    if (!name)               return showMsg(msgEl, '❌ Veuillez entrer votre nom.',               'error');
+    if (!size || size < 1)   return showMsg(msgEl, '❌ Nombre de personnes invalide.',              'error');
+    if (!time)               return showMsg(msgEl, '❌ Veuillez choisir une date et une heure.',   'error');
+
+    submitting       = true;
+    btn.disabled     = true;
+    btn.textContent  = '⏳ Envoi en cours…';
+    msgEl.style.display = 'none';
+
+    try {
+        const res = await fetch('/reservations', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+                customer_name:    name,
+                party_size:       size,
+                reservation_time: time,
+                phone:            document.getElementById('res-phone').value.trim(),
+            }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showMsg(msgEl, '✅ Réservation enregistrée ! Confirmation sous 30 minutes.', 'success');
+            e.target.reset();
+        } else {
+            showMsg(msgEl, '❌ ' + (data.error || 'Erreur serveur.'), 'error');
+        }
+    } catch {
+        showMsg(msgEl, '❌ Impossible de joindre le serveur. Est-il démarré ?', 'error');
+    } finally {
+        submitting      = false;
+        btn.disabled    = false;
+        btn.textContent = '📅 Confirmer la réservation';
+    }
+}
+
+// ── WhatsApp ────────────────────────────────────────────────────────────────
+function openWhatsApp() {
+    if (!WA_NUMBER) { alert('Numéro WhatsApp non configuré.'); return; }
+    const msg = encodeURIComponent('Bonjour 👋 je souhaite commander ou réserver une table !');
+    window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtPrice(p) { const n=parseFloat(p); return (n%1===0?n.toFixed(0):n.toFixed(2))+'€'; }
+function showMsg(el, text, type) {
+    el.textContent   = text;
+    el.className     = 'form-message ' + type;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+
+<!-- Seevio watermark -->
+<div class="seevio-badge">
+    <a href="#" tabindex="-1" aria-hidden="true">
+        <svg viewBox="0 0 14 14" width="10" height="10" fill="none">
+            <circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-width="1.1"/>
+            <text x="7" y="10.5" text-anchor="middle" font-size="8"
+                  font-family="Georgia,serif" font-weight="700" fill="currentColor">S</text>
+        </svg>
+        Seevio
+    </a>
+</div>
+</body>
+</html>

@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="icon" type="image/svg+xml"  href="/static/img/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon16.png">
+    <meta name="theme-color" content="#1A1A1A">
+    <style id="dynamic-colors"></style>
+</head>
+<body class="admin-body">
+
+<header class="admin-header">
+    <div class="container admin-header-inner">
+        <div class="admin-logo">⚙️ <span id="admin-restaurant-name">Restaurant OS</span>
+            <span class="admin-badge">Admin</span></div>
+        <div class="admin-nav">
+            <span id="clock" class="admin-clock"></span>
+            <a href="/" class="btn-back">← Site</a>
+            <a href="/qr" class="btn-back">📱 QR</a>
+            <button class="btn-refresh" onclick="loadAll()">🔄</button>
+        </div>
+    </div>
+</header>
+
+<main class="admin-main container">
+
+    <!-- STATS -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-number" id="stat-orders-today">–</div>
+            <div class="stat-label">Commandes aujourd'hui</div>
+            <div class="stat-sub" id="stat-orders-total-sub">total: –</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="stat-res-today">–</div>
+            <div class="stat-label">Réservations aujourd'hui</div>
+            <div class="stat-sub" id="stat-res-total-sub">total: –</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number pending" id="stat-pending">–</div>
+            <div class="stat-label">Commandes en attente</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number done" id="stat-done-today">–</div>
+            <div class="stat-label">Terminées aujourd'hui</div>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs" role="tablist">
+        <button class="tab active" onclick="switchTab('orders',this)"       role="tab">🍽️ Commandes</button>
+        <button class="tab"        onclick="switchTab('reservations',this)"  role="tab">📅 Réservations</button>
+        <button class="tab"        onclick="switchTab('menu',this)"          role="tab">🍴 Menu</button>
+        <button class="tab"        onclick="switchTab('webhook',this)"       role="tab">💬 WhatsApp</button>
+        <button class="tab"        onclick="switchTab('settings',this)"      role="tab">⚙️ Settings</button>
+    </div>
+
+    <!-- ─── ORDERS ──────────────────────────────────────────────────────── -->
+    <div id="tab-orders" class="tab-content active" role="tabpanel">
+        <div class="table-header">
+            <h2>Commandes</h2>
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="filterOrders('all',this)">Toutes</button>
+                <button class="filter-btn" onclick="filterOrders('pending',this)">En attente</button>
+                <button class="filter-btn" onclick="filterOrders('confirmed',this)">Confirmées</button>
+                <button class="filter-btn" onclick="filterOrders('done',this)">Terminées</button>
+            </div>
+        </div>
+        <div id="orders-loading" class="loading-msg"><span class="spinner"></span> Chargement…</div>
+        <div id="orders-empty"  class="empty-msg" style="display:none">Aucune commande pour l'instant 🍽️</div>
+        <div id="orders-list"   class="cards-list"></div>
+    </div>
+
+    <!-- ─── RESERVATIONS ────────────────────────────────────────────────── -->
+    <div id="tab-reservations" class="tab-content" role="tabpanel">
+        <div class="table-header">
+            <h2>Réservations</h2>
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="filterRes('all',this)">Toutes</button>
+                <button class="filter-btn" onclick="filterRes('pending',this)">En attente</button>
+                <button class="filter-btn" onclick="filterRes('confirmed',this)">Confirmées</button>
+                <button class="filter-btn" onclick="filterRes('cancelled',this)">Annulées</button>
+            </div>
+        </div>
+        <div id="res-loading" class="loading-msg"><span class="spinner"></span> Chargement…</div>
+        <div id="res-empty"  class="empty-msg" style="display:none">Aucune réservation 📅</div>
+        <div id="res-list"   class="cards-list"></div>
+    </div>
+
+    <!-- ─── MENU ────────────────────────────────────────────────────────── -->
+    <div id="tab-menu" class="tab-content" role="tabpanel">
+        <div class="table-header">
+            <h2>Gestion du Menu</h2>
+            <button class="btn-add-item" onclick="toggleAddForm()">+ Ajouter un plat</button>
+        </div>
+
+        <!-- ADD FORM -->
+        <div id="add-item-form" class="item-form-panel" style="display:none">
+            <h3>✨ Nouveau plat</h3>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Nom *</label>
+                    <input type="text" id="new-name" placeholder="ex: Steak frites">
+                </div>
+                <div class="form-group">
+                    <label>Prix (€) *</label>
+                    <input type="number" id="new-price" placeholder="19.90" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Catégorie</label>
+                    <select id="new-category">
+                        <option>Entrées</option>
+                        <option selected>Plats principaux</option>
+                        <option>Desserts</option>
+                        <option>Boissons</option>
+                    </select>
+                </div>
+                <div class="form-group form-check">
+                    <label class="check-label">
+                        <input type="checkbox" id="new-featured"> Plat signature 🌟
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:12px">
+                <label>Description</label>
+                <textarea id="new-desc" placeholder="Décrivez le plat…" rows="2"></textarea>
+            </div>
+            <div class="item-form-actions">
+                <button class="action-btn confirm" onclick="addMenuItem()">✅ Ajouter</button>
+                <button class="action-btn reset"   onclick="toggleAddForm()">Annuler</button>
+            </div>
+            <div id="add-item-msg" class="form-message" style="display:none"></div>
+        </div>
+
+        <div id="menu-items-loading" class="loading-msg"><span class="spinner"></span> Chargement…</div>
+        <div id="menu-items-list"></div>
+    </div>
+
+    <!-- ─── EDIT MODAL ──────────────────────────────────────────────────── -->
+    <div id="edit-overlay" class="edit-overlay" style="display:none" onclick="closeEditForm()"></div>
+    <div id="edit-modal"   class="edit-modal"   style="display:none" role="dialog" aria-modal="true">
+        <h3>✏️ Modifier le plat</h3>
+        <input type="hidden" id="edit-id">
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label>Nom *</label>
+                <input type="text" id="edit-name">
+            </div>
+            <div class="form-group">
+                <label>Prix (€) *</label>
+                <input type="number" id="edit-price" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label>Catégorie</label>
+                <select id="edit-category">
+                    <option>Entrées</option>
+                    <option>Plats principaux</option>
+                    <option>Desserts</option>
+                    <option>Boissons</option>
+                </select>
+            </div>
+            <div class="form-group form-check">
+                <label class="check-label">
+                    <input type="checkbox" id="edit-featured"> Plat signature 🌟
+                </label>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:12px">
+            <label>Description</label>
+            <textarea id="edit-desc" rows="2"></textarea>
+        </div>
+        <!-- IMAGE UPLOAD -->
+        <div class="form-group image-upload-group" style="margin-top:14px">
+            <label>Photo du plat</label>
+            <div class="image-upload-row">
+                <div class="image-preview-wrap" id="edit-img-preview">
+                    <span class="img-placeholder">📷 Aucune photo</span>
+                </div>
+                <div class="image-upload-actions">
+                    <label class="btn-upload-img">
+                        📁 Choisir une image
+                        <input type="file" id="edit-img-file" accept="image/*" onchange="previewAndUpload(this)" style="display:none">
+                    </label>
+                    <button class="action-btn cancel" id="edit-img-remove" onclick="removeImage()" style="display:none">
+                        🗑️ Supprimer
+                    </button>
+                    <div id="edit-img-progress" class="img-progress" style="display:none">⏳ Upload…</div>
+                </div>
+            </div>
+        </div>
+        <div class="item-form-actions">
+            <button class="action-btn confirm" onclick="saveEditMenuItem()">💾 Sauvegarder</button>
+            <button class="action-btn reset"   onclick="closeEditForm()">Annuler</button>
+        </div>
+        <div id="edit-item-msg" class="form-message" style="display:none"></div>
+    </div>
+
+    <!-- ─── WHATSAPP ────────────────────────────────────────────────────── -->
+    <div id="tab-webhook" class="tab-content" role="tabpanel">
+        <div class="webhook-panel">
+            <h2>Simuler WhatsApp Bot 💬</h2>
+            <p class="webhook-desc">Testez le chatbot directement depuis ici. Session par numéro simulé.</p>
+            <div class="chat-window" id="chat-window" role="log" aria-live="polite">
+                <div class="chat-bubble bot">👋 Tapez un message pour démarrer…</div>
+            </div>
+            <div class="chat-input-row">
+                <input type="text" id="chat-input" placeholder="Tapez votre message…"
+                       onkeydown="if(event.key==='Enter')sendChat()" autocomplete="off">
+                <button class="btn-send" onclick="sendChat()">Envoyer ↵</button>
+            </div>
+            <div class="chat-hints">
+                <span>Suggestions :</span>
+                <button onclick="injectChat('Bonjour')">Bonjour</button>
+                <button onclick="injectChat('1')">1 Commander</button>
+                <button onclick="injectChat('2')">2 Réserver</button>
+                <button onclick="injectChat('menu')">Reset</button>
+            </div>
+            <div class="webhook-raw">
+                <details>
+                    <summary>🔧 Test cURL</summary>
+                    <pre>curl -X POST http://localhost:5000/webhook/whatsapp \
+  -H "Content-Type: application/json" \
+  -d '{"From":"+33600000000","Body":"Bonjour"}'</pre>
+                </details>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── SETTINGS ────────────────────────────────────────────────────── -->
+    <div id="tab-settings" class="tab-content" role="tabpanel">
+        <div class="settings-panel">
+            <h2>⚙️ Paramètres du restaurant</h2>
+            <p class="settings-desc">Les modifications mettent à jour <code>config.json</code> et s'appliquent immédiatement sur le site.</p>
+
+            <div class="settings-section">
+                <h3>🏪 Identité</h3>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Nom du restaurant</label>
+                        <input type="text" id="cfg-name" placeholder="La Belle Table">
+                    </div>
+                    <div class="form-group">
+                        <label>Slogan / Tagline</label>
+                        <input type="text" id="cfg-tagline" placeholder="Restaurant Français · Paris">
+                    </div>
+                    <div class="form-group">
+                        <label>Emoji logo</label>
+                        <input type="text" id="cfg-emoji" placeholder="🍽️" maxlength="4">
+                    </div>
+                    <div class="form-group">
+                        <label>Numéro WhatsApp <small>(sans +, ex: 33612345678)</small></label>
+                        <input type="text" id="cfg-wa" placeholder="33600000000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>📝 Textes hero</h3>
+                <div class="form-group">
+                    <label>Message d'accueil</label>
+                    <input type="text" id="cfg-welcome" placeholder="Une cuisine authentique…">
+                </div>
+                <div class="form-group" style="margin-top:12px">
+                    <label>Sous-titre</label>
+                    <input type="text" id="cfg-sub" placeholder="Commandez sur WhatsApp…">
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>📍 Infos pratiques</h3>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Adresse</label>
+                        <input type="text" id="cfg-address" placeholder="12 Rue de la Paix, Paris 8e">
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone</label>
+                        <input type="text" id="cfg-phone" placeholder="+33 1 23 45 67 89">
+                    </div>
+                    <div class="form-group">
+                        <label>Horaires midi</label>
+                        <input type="text" id="cfg-lunch" placeholder="Midi 12h–14h30">
+                    </div>
+                    <div class="form-group">
+                        <label>Horaires soir</label>
+                        <input type="text" id="cfg-dinner" placeholder="Soir 19h–22h30">
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>🎨 Couleurs</h3>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Couleur principale</label>
+                        <div class="color-row">
+                            <input type="color" id="cfg-color-primary" value="#C9A84C" class="color-picker">
+                            <input type="text"  id="cfg-color-primary-txt" placeholder="#C9A84C" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Couleur claire</label>
+                        <div class="color-row">
+                            <input type="color" id="cfg-color-light" value="#E8C97A" class="color-picker">
+                            <input type="text"  id="cfg-color-light-txt" placeholder="#E8C97A" maxlength="7">
+                        </div>
+                    </div>
+                </div>
+                <div id="color-preview" class="color-preview">
+                    <span>Aperçu :</span>
+                    <span class="color-swatch" id="swatch-primary"></span>
+                    <span class="color-swatch" id="swatch-light"></span>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button class="btn-save-settings" onclick="saveSettings()">💾 Sauvegarder les paramètres</button>
+            </div>
+            <div id="settings-msg" class="form-message" style="display:none"></div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let allOrders   = [], allRes = [], allMenuItems = [];
+let orderFilter = 'all', resFilter = 'all';
+let savingSettings = false;
+const PHONE_SIM    = '+33600000001';
+const CAT_ORDER    = ['Entrées', 'Plats principaux', 'Desserts', 'Boissons'];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    loadConfig();
+    loadAll();
+    updateClock();
+    setInterval(updateClock, 1000);
+    setInterval(loadAll,    30_000);
+    initColorPickers();
+});
+
+function updateClock() {
+    document.getElementById('clock').textContent =
+        new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+async function loadAll() {
+    await Promise.all([loadStats(), loadOrders(), loadReservations(), loadMenuItems()]);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadConfig() {
+    try {
+        const cfg = await fetch('/config').then(r => r.json());
+        applyColorsToPage(cfg.colors);
+        document.getElementById('admin-restaurant-name').textContent = cfg.restaurant_name || 'Restaurant OS';
+        document.title = 'Admin – ' + (cfg.restaurant_name || 'Restaurant');
+        populateSettingsForm(cfg);
+    } catch(e) { console.warn('Config load error', e); }
+}
+
+function applyColorsToPage(colors) {
+    if (!colors) return;
+    document.getElementById('dynamic-colors').textContent =
+        `:root{--gold:${colors.primary};--gold-light:${colors.primary_light};}`;
+}
+
+function populateSettingsForm(cfg) {
+    setVal('cfg-name',     cfg.restaurant_name);
+    setVal('cfg-tagline',  cfg.tagline);
+    setVal('cfg-emoji',    cfg.logo_emoji);
+    setVal('cfg-wa',       cfg.whatsapp_number);
+    setVal('cfg-welcome',  cfg.welcome_message);
+    setVal('cfg-sub',      cfg.welcome_sub);
+    setVal('cfg-address',  cfg.address);
+    setVal('cfg-phone',    cfg.phone);
+    setVal('cfg-lunch',    cfg.hours_lunch);
+    setVal('cfg-dinner',   cfg.hours_dinner);
+    if (cfg.colors) {
+        setVal('cfg-color-primary',     cfg.colors.primary);
+        setVal('cfg-color-primary-txt', cfg.colors.primary);
+        setVal('cfg-color-light',       cfg.colors.primary_light);
+        setVal('cfg-color-light-txt',   cfg.colors.primary_light);
+        updateSwatches();
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadStats() {
+    try {
+        const s = await fetch('/stats').then(r => r.json());
+        setText('stat-orders-today',     s.today_orders);
+        setText('stat-orders-total-sub', `total: ${s.total_orders}`);
+        setText('stat-res-today',         s.today_reservations);
+        setText('stat-res-total-sub',     `total: ${s.total_reservations}`);
+        setText('stat-pending',           s.pending_orders);
+        setText('stat-done-today',        s.done_today);
+    } catch(e) { console.warn('Stats error', e); }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+    document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    el.classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ORDERS
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadOrders() {
+    try {
+        allOrders = await apiFetch('/orders');
+        document.getElementById('orders-loading').style.display = 'none';
+        renderOrders(orderFilter);
+    } catch { document.getElementById('orders-loading').textContent = '❌ Erreur de connexion.'; }
+}
+
+function filterOrders(s, btn) {
+    orderFilter = s;
+    document.querySelectorAll('#tab-orders .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderOrders(s);
+}
+
+function renderOrders(filter) {
+    const list  = document.getElementById('orders-list');
+    const empty = document.getElementById('orders-empty');
+    const data  = filter === 'all' ? allOrders : allOrders.filter(o => o.status === filter);
+    if (!data.length) { empty.style.display = 'block'; list.innerHTML = ''; return; }
+    empty.style.display = 'none';
+    list.innerHTML = data.map(o => `
+        <div class="item-card">
+            <div class="item-card-header">
+                <div class="item-title">
+                    <span class="item-id">#${o.id}</span>
+                    <strong>${esc(o.customer_name)}</strong>
+                    <span class="badge badge-${o.status}">${statusLabel(o.status)}</span>
+                </div>
+                <span class="item-time">${fmtDate(o.created_at)}</span>
+            </div>
+            <div class="item-body">
+                <div class="item-detail">🍽️ <strong>Commande :</strong> ${esc(o.items)}</div>
+                <div class="item-detail">📍 <strong>Type :</strong> ${esc(o.delivery_type||'Sur place')}</div>
+                ${o.pickup_time?`<div class="item-detail">⏰ <strong>Heure :</strong> ${esc(o.pickup_time)}</div>`:''}
+                ${o.phone?`<div class="item-detail">📞 <strong>Tél :</strong> ${esc(o.phone)}</div>`:''}
+            </div>
+            <div class="item-actions">
+                ${o.status==='pending'   ?`<button class="action-btn confirm" onclick="updateOrder(${o.id},'confirmed',this)">✅ Confirmer</button>`:''}
+                ${o.status==='confirmed' ?`<button class="action-btn done"    onclick="updateOrder(${o.id},'done',this)">🏁 Terminer</button>`:''}
+                ${o.status==='done'      ?`<button class="action-btn reset"   onclick="updateOrder(${o.id},'pending',this)">↩ Remettre</button>`:''}
+            </div>
+        </div>`).join('');
+}
+
+async function updateOrder(id, status, btn) {
+    btn.disabled = true; btn.textContent = '…';
+    try {
+        await apiFetch(`/orders/${id}/status`, 'PATCH', {status});
+        await Promise.all([loadStats(), loadOrders()]);
+    } catch { btn.disabled = false; btn.textContent = '⚠️ Erreur'; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESERVATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadReservations() {
+    try {
+        allRes = await apiFetch('/reservations');
+        document.getElementById('res-loading').style.display = 'none';
+        renderRes(resFilter);
+    } catch { document.getElementById('res-loading').textContent = '❌ Erreur de connexion.'; }
+}
+
+function filterRes(s, btn) {
+    resFilter = s;
+    document.querySelectorAll('#tab-reservations .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderRes(s);
+}
+
+function renderRes(filter) {
+    const list  = document.getElementById('res-list');
+    const empty = document.getElementById('res-empty');
+    const data  = filter === 'all' ? allRes : allRes.filter(r => r.status === filter);
+    if (!data.length) { empty.style.display = 'block'; list.innerHTML = ''; return; }
+    empty.style.display = 'none';
+    list.innerHTML = data.map(r => `
+        <div class="item-card">
+            <div class="item-card-header">
+                <div class="item-title">
+                    <span class="item-id">#${r.id}</span>
+                    <strong>${esc(r.customer_name)}</strong>
+                    <span class="badge badge-${r.status}">${resStatusLabel(r.status)}</span>
+                </div>
+                <span class="item-time">${fmtDate(r.created_at)}</span>
+            </div>
+            <div class="item-body">
+                <div class="item-detail">👥 <strong>Personnes :</strong> ${r.party_size}</div>
+                <div class="item-detail">📅 <strong>Heure :</strong> ${esc(r.reservation_time)}</div>
+                ${r.phone?`<div class="item-detail">📞 <strong>Tél :</strong> ${esc(r.phone)}</div>`:''}
+            </div>
+            <div class="item-actions">
+                ${r.status==='pending'   ?`<button class="action-btn confirm" onclick="updateRes(${r.id},'confirmed',this)">✅ Confirmer</button>`:''}
+                ${r.status==='pending'   ?`<button class="action-btn cancel"  onclick="updateRes(${r.id},'cancelled',this)">❌ Annuler</button>`:''}
+                ${r.status==='confirmed' ?`<button class="action-btn cancel"  onclick="updateRes(${r.id},'cancelled',this)">❌ Annuler</button>`:''}
+                ${r.status==='cancelled' ?`<button class="action-btn reset"   onclick="updateRes(${r.id},'pending',this)">↩ Remettre</button>`:''}
+            </div>
+        </div>`).join('');
+}
+
+async function updateRes(id, status, btn) {
+    btn.disabled = true; btn.textContent = '…';
+    try {
+        await apiFetch(`/reservations/${id}/status`, 'PATCH', {status});
+        await Promise.all([loadStats(), loadReservations()]);
+    } catch { btn.disabled = false; btn.textContent = '⚠️ Erreur'; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MENU MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadMenuItems() {
+    try {
+        allMenuItems = await apiFetch('/menu?all=1');
+        document.getElementById('menu-items-loading').style.display = 'none';
+        renderMenuItems();
+    } catch { document.getElementById('menu-items-loading').textContent = '❌ Erreur de connexion.'; }
+}
+
+function renderMenuItems() {
+    const container = document.getElementById('menu-items-list');
+    if (!allMenuItems.length) {
+        container.innerHTML = '<div class="empty-msg">Aucun plat. Ajoutez votre premier plat ! 🍽️</div>';
+        return;
+    }
+    const grouped = {};
+    allMenuItems.forEach(i => (grouped[i.category] = grouped[i.category] || []).push(i));
+    const cats = [
+        ...CAT_ORDER.filter(c => grouped[c]),
+        ...Object.keys(grouped).filter(c => !CAT_ORDER.includes(c)),
+    ];
+
+    container.innerHTML = cats.map(cat => `
+        <div class="menu-admin-category">
+            <h3 class="menu-admin-cat-title">${esc(cat)}
+                <span class="cat-count">${grouped[cat].length} plat${grouped[cat].length>1?'s':''}</span>
+            </h3>
+            <div class="menu-admin-items">
+                ${grouped[cat].map((item, idx) => `
+                    <div class="menu-admin-item${item.available?'':' unavailable'}" data-id="${item.id}">
+                        ${item.image_path ? `
+                            <div class="menu-admin-thumb">
+                                <img src="${esc(item.image_path)}" alt="${esc(item.name)}"
+                                     onerror="this.parentElement.style.display='none'">
+                            </div>` : '<div class="menu-admin-thumb no-img">📷</div>'}
+                        <div class="menu-item-left">
+                            <div class="menu-item-name">
+                                ${esc(item.name)}
+                                ${item.featured?'<span class="sig-badge">Signature</span>':''}
+                            </div>
+                            ${item.description?`<div class="menu-item-desc">${esc(item.description)}</div>`:''}
+                        </div>
+                        <div class="menu-item-right">
+                            <div class="menu-item-price">${fmtPrice(item.price)}</div>
+                            <span class="badge ${item.available?'badge-confirmed':'badge-cancelled'}">
+                                ${item.available?'Dispo':'Indispo'}
+                            </span>
+                        </div>
+                        <div class="menu-item-actions">
+                            <div class="move-btns">
+                                <button class="move-btn" title="Monter" onclick="moveItem(${item.id},-1,this)"
+                                    ${idx===0?'disabled':''}>▲</button>
+                                <button class="move-btn" title="Descendre" onclick="moveItem(${item.id},1,this)"
+                                    ${idx===grouped[cat].length-1?'disabled':''}>▼</button>
+                            </div>
+                            <button class="action-btn ${item.available?'cancel':'confirm'}"
+                                    onclick="toggleAvail(${item.id},${item.available?0:1},this)">
+                                ${item.available?'🔴 Désactiver':'🟢 Activer'}
+                            </button>
+                            <button class="action-btn done"   onclick="openEdit(${item.id})">✏️ Modifier</button>
+                            <button class="action-btn cancel" onclick="deleteItem(${item.id},this)">🗑️</button>
+                        </div>
+                    </div>`).join('')}
+            </div>
+        </div>`).join('');
+}
+
+// ── Move up/down ─────────────────────────────────────────────────────────────
+async function moveItem(id, dir, btn) {
+    btn.disabled = true;
+    // Get all items in same category, find index
+    const item = allMenuItems.find(i => i.id === id);
+    if (!item) { btn.disabled = false; return; }
+    const catItems = allMenuItems.filter(i => i.category === item.category);
+    const idx = catItems.findIndex(i => i.id === id);
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= catItems.length) { btn.disabled = false; return; }
+    // Swap positions
+    const ids = catItems.map(i => i.id);
+    ids.splice(idx, 1);
+    ids.splice(newIdx, 0, id);
+    try {
+        await apiFetch('/menu/reorder', 'POST', {ids});
+        await loadMenuItems();
+    } catch { btn.disabled = false; }
+}
+
+// ── Toggle availability ───────────────────────────────────────────────────────
+async function toggleAvail(id, val, btn) {
+    btn.disabled = true; btn.textContent = '…';
+    try {
+        await apiFetch(`/menu/${id}`, 'PATCH', {available: val});
+        await loadMenuItems();
+    } catch { btn.disabled = false; }
+}
+
+// ── Add ───────────────────────────────────────────────────────────────────────
+function toggleAddForm() {
+    const form  = document.getElementById('add-item-form');
+    const isOpen = form.style.display !== 'none';
+    form.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) document.getElementById('new-name').focus();
+}
+
+async function addMenuItem() {
+    const name  = document.getElementById('new-name').value.trim();
+    const price = document.getElementById('new-price').value;
+    const msgEl = document.getElementById('add-item-msg');
+    if (!name)  return showMsg(msgEl, '❌ Le nom est requis.',  'error');
+    if (!price) return showMsg(msgEl, '❌ Le prix est requis.', 'error');
+    try {
+        await apiFetch('/menu', 'POST', {
+            name, price: parseFloat(price),
+            category:    document.getElementById('new-category').value,
+            description: document.getElementById('new-desc').value.trim(),
+            featured:    document.getElementById('new-featured').checked,
+        });
+        showMsg(msgEl, '✅ Plat ajouté !', 'success');
+        ['new-name','new-price','new-desc'].forEach(i => document.getElementById(i).value = '');
+        document.getElementById('new-featured').checked = false;
+        await loadMenuItems();
+        setTimeout(() => { toggleAddForm(); msgEl.style.display='none'; }, 1000);
+    } catch(e) { showMsg(msgEl, '❌ ' + e.message, 'error'); }
+}
+
+// ── Edit ──────────────────────────────────────────────────────────────────────
+function openEdit(id) {
+    const item = allMenuItems.find(i => i.id === id);
+    if (!item) return;
+    setVal('edit-id',       item.id);
+    setVal('edit-name',     item.name);
+    setVal('edit-price',    item.price);
+    setVal('edit-desc',     item.description || '');
+    document.getElementById('edit-featured').checked = !!item.featured;
+    const sel = document.getElementById('edit-category');
+    for (const opt of sel.options) opt.selected = (opt.value === item.category);
+
+    // Image preview
+    const preview = document.getElementById('edit-img-preview');
+    const removeBtn = document.getElementById('edit-img-remove');
+    if (item.image_path) {
+        preview.innerHTML = `<img src="${esc(item.image_path)}" alt="preview" onerror="this.src=''">`;
+        removeBtn.style.display = 'inline-flex';
+    } else {
+        preview.innerHTML = '<span class="img-placeholder">📷 Aucune photo</span>';
+        removeBtn.style.display = 'none';
+    }
+    document.getElementById('edit-img-file').value = '';
+    document.getElementById('edit-item-msg').style.display = 'none';
+    document.getElementById('edit-overlay').style.display = 'block';
+    document.getElementById('edit-modal').style.display   = 'block';
+    document.getElementById('edit-name').focus();
+}
+
+function closeEditForm() {
+    document.getElementById('edit-overlay').style.display = 'none';
+    document.getElementById('edit-modal').style.display   = 'none';
+}
+
+async function saveEditMenuItem() {
+    const id    = parseInt(document.getElementById('edit-id').value);
+    const name  = document.getElementById('edit-name').value.trim();
+    const price = document.getElementById('edit-price').value;
+    const msgEl = document.getElementById('edit-item-msg');
+    if (!name)  return showMsg(msgEl, '❌ Le nom est requis.',  'error');
+    if (!price) return showMsg(msgEl, '❌ Le prix est requis.', 'error');
+    try {
+        await apiFetch(`/menu/${id}`, 'PATCH', {
+            name, price: parseFloat(price),
+            category:    document.getElementById('edit-category').value,
+            description: document.getElementById('edit-desc').value.trim(),
+            featured:    document.getElementById('edit-featured').checked,
+        });
+        showMsg(msgEl, '✅ Sauvegardé !', 'success');
+        await loadMenuItems();
+        setTimeout(closeEditForm, 700);
+    } catch(e) { showMsg(msgEl, '❌ ' + e.message, 'error'); }
+}
+
+// ── Image upload ──────────────────────────────────────────────────────────────
+async function previewAndUpload(input) {
+    const file  = input.files[0];
+    if (!file) return;
+    const id    = parseInt(document.getElementById('edit-id').value);
+    const msgEl = document.getElementById('edit-item-msg');
+    const prog  = document.getElementById('edit-img-progress');
+
+    // Client-side size check (4MB)
+    if (file.size > 4 * 1024 * 1024) {
+        return showMsg(msgEl, '❌ Image trop lourde (max 4 Mo).', 'error');
+    }
+
+    // Local preview immediately
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('edit-img-preview').innerHTML =
+            `<img src="${e.target.result}" alt="preview">`;
+    };
+    reader.readAsDataURL(file);
+
+    // Upload
+    prog.style.display = 'block';
+    const form = new FormData();
+    form.append('image', file);
+    try {
+        const res  = await fetch(`/menu/${id}/image`, {method:'POST', body: form});
+        const data = await res.json();
+        prog.style.display = 'none';
+        if (res.ok) {
+            showMsg(msgEl, '✅ Image uploadée !', 'success');
+            document.getElementById('edit-img-remove').style.display = 'inline-flex';
+            await loadMenuItems();
+        } else {
+            showMsg(msgEl, '❌ ' + (data.error || 'Erreur upload'), 'error');
+        }
+    } catch {
+        prog.style.display = 'none';
+        showMsg(msgEl, '❌ Erreur upload — vérifiez le serveur.', 'error');
+    }
+}
+
+async function removeImage() {
+    const id = parseInt(document.getElementById('edit-id').value);
+    try {
+        await apiFetch(`/menu/${id}`, 'PATCH', {image_path: ''});
+        document.getElementById('edit-img-preview').innerHTML = '<span class="img-placeholder">📷 Aucune photo</span>';
+        document.getElementById('edit-img-remove').style.display = 'none';
+        await loadMenuItems();
+    } catch(e) { console.error(e); }
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+async function deleteItem(id, btn) {
+    const item = allMenuItems.find(i => i.id === id);
+    if (!confirm(`Supprimer « ${item ? item.name : id} » ?`)) return;
+    btn.disabled = true; btn.textContent = '…';
+    try {
+        await apiFetch(`/menu/${id}`, 'DELETE');
+        await loadMenuItems();
+    } catch { btn.disabled = false; btn.textContent = '🗑️'; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHATSAPP SIMULATOR
+// ─────────────────────────────────────────────────────────────────────────────
+async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const msg   = input.value.trim();
+    if (!msg) return;
+    appendBubble(msg, 'user');
+    input.value    = '';
+    input.disabled = true;
+    try {
+        const data = await apiFetch('/webhook/whatsapp', 'POST', {From: PHONE_SIM, Body: msg});
+        appendBubble(data.reply || '⚠️ Pas de réponse', 'bot');
+        if (data.reply && (data.reply.includes('confirmée') || data.reply.includes('enregistrée'))) {
+            setTimeout(loadAll, 500);
+        }
+    } catch { appendBubble('❌ Impossible de joindre le serveur.', 'bot'); }
+    input.disabled = false;
+    input.focus();
+}
+
+function appendBubble(text, role) {
+    const win = document.getElementById('chat-window');
+    const div = document.createElement('div');
+    div.className = 'chat-bubble ' + role;
+    div.innerHTML = esc(text)
+        .replace(/\*(.+?)\*/g,  '<strong>$1</strong>')
+        .replace(/_(.+?)_/g,    '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+    win.appendChild(div);
+    win.scrollTop = win.scrollHeight;
+}
+
+function injectChat(text) {
+    document.getElementById('chat-input').value = text;
+    sendChat();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS
+// ─────────────────────────────────────────────────────────────────────────────
+function initColorPickers() {
+    // Sync color picker ↔ text input
+    const pairs = [
+        ['cfg-color-primary', 'cfg-color-primary-txt'],
+        ['cfg-color-light',   'cfg-color-light-txt'],
+    ];
+    pairs.forEach(([pickerId, txtId]) => {
+        const picker = document.getElementById(pickerId);
+        const txt    = document.getElementById(txtId);
+        picker.addEventListener('input', () => { txt.value = picker.value; updateSwatches(); });
+        txt.addEventListener('input', () => {
+            if (/^#[0-9A-Fa-f]{6}$/.test(txt.value)) {
+                picker.value = txt.value;
+                updateSwatches();
+            }
+        });
+    });
+    updateSwatches();
+}
+
+function updateSwatches() {
+    const p = document.getElementById('cfg-color-primary-txt').value || '#C9A84C';
+    const l = document.getElementById('cfg-color-light-txt').value   || '#E8C97A';
+    const sp = document.getElementById('swatch-primary');
+    const sl = document.getElementById('swatch-light');
+    if (sp) sp.style.background = p;
+    if (sl) sl.style.background = l;
+}
+
+async function saveSettings() {
+    if (savingSettings) return;
+    savingSettings = true;
+    const btn   = document.querySelector('.btn-save-settings');
+    const msgEl = document.getElementById('settings-msg');
+    const origTxt = btn.textContent;
+    btn.disabled = true; btn.textContent = '⏳ Sauvegarde…';
+
+    const payload = {
+        restaurant_name:  getVal('cfg-name'),
+        tagline:          getVal('cfg-tagline'),
+        logo_emoji:       getVal('cfg-emoji'),
+        whatsapp_number:  getVal('cfg-wa').replace(/\D/g, ''),
+        welcome_message:  getVal('cfg-welcome'),
+        welcome_sub:      getVal('cfg-sub'),
+        address:          getVal('cfg-address'),
+        phone:            getVal('cfg-phone'),
+        hours_lunch:      getVal('cfg-lunch'),
+        hours_dinner:     getVal('cfg-dinner'),
+        colors: {
+            primary:       getVal('cfg-color-primary-txt') || '#C9A84C',
+            primary_light: getVal('cfg-color-light-txt')   || '#E8C97A',
+        },
+    };
+
+    try {
+        const data = await apiFetch('/config', 'POST', payload);
+        showMsg(msgEl, '✅ Paramètres sauvegardés ! Rechargez le site pour voir les changements.', 'success');
+        applyColorsToPage(data.config?.colors);
+        if (data.config?.restaurant_name)
+            document.getElementById('admin-restaurant-name').textContent = data.config.restaurant_name;
+    } catch(e) {
+        showMsg(msgEl, '❌ ' + e.message, 'error');
+    } finally {
+        savingSettings   = false;
+        btn.disabled     = false;
+        btn.textContent  = origTxt;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+async function apiFetch(url, method = 'GET', body = null) {
+    const opts = { method, headers: {} };
+    if (body && method !== 'GET') {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+    }
+    const res  = await fetch(url, opts);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function setText(id, v) { const e=document.getElementById(id); if(e) e.textContent=v; }
+function setVal(id, v)  { const e=document.getElementById(id); if(e) e.value=v||''; }
+function getVal(id)     { const e=document.getElementById(id); return e ? e.value.trim() : ''; }
+function fmtDate(ts) {
+    if (!ts) return '';
+    const d = new Date(ts.includes('T') ? ts : ts.replace(' ','T')+'Z');
+    return d.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function fmtPrice(p) { const n=parseFloat(p); return (n%1===0?n.toFixed(0):n.toFixed(2))+'€'; }
+function showMsg(el, text, type) {
+    el.textContent = text; el.className = 'form-message '+type; el.style.display = 'block';
+    el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function statusLabel(s)    { return {pending:'⏳ En attente',confirmed:'✅ Confirmée',done:'🏁 Terminée'}[s]||s; }
+function resStatusLabel(s) { return {pending:'⏳ En attente',confirmed:'✅ Confirmée',cancelled:'❌ Annulée'}[s]||s; }
+</script>
+
+<!-- Seevio watermark -->
+<div class="seevio-badge">
+    <a href="#" tabindex="-1" aria-hidden="true">
+        <svg viewBox="0 0 14 14" width="10" height="10" fill="none">
+            <circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-width="1.1"/>
+            <text x="7" y="10.5" text-anchor="middle" font-size="8"
+                  font-family="Georgia,serif" font-weight="700" fill="currentColor">S</text>
+        </svg>
+        Seevio
+    </a>
+</div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "restaurant_name": "La Belle Table",
+  "tagline": "Restaurant Français · Paris",
+  "logo_emoji": "🍽️",
+  "welcome_message": "Une cuisine authentique, des saveurs inoubliables",
+  "welcome_sub": "Commandez directement sur WhatsApp ou réservez votre table en ligne",
+  "whatsapp_number": "33612345678",
+  "address": "12 Rue de la Paix, Paris 8e",
+  "phone": "+33 1 23 45 67 89",
+  "hours_lunch": "Midi 12h–14h30",
+  "hours_dinner": "Soir 19h–22h30",
+  "colors": {
+    "primary": "#C9A84C",
+    "primary_light": "#E8C97A"
+  }
+}
