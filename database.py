@@ -3,21 +3,28 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# En production sur Render, DB_PATH pointe vers le Persistent Disk (/data)
-# En local, utilise restaurant.db dans le dossier du projet
-DB_PATH = os.environ.get(
+# Production Render → DB_PATH=/data/restaurant.db (Persistent Disk)
+# Local → restaurant.db dans le dossier du projet
+_requested = os.environ.get(
     'DB_PATH',
     os.path.join(BASE_DIR, 'restaurant.db')
 )
 
-# S'assurer que le dossier parent existe (utile pour /data sur Render)
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+# Tenter de créer le dossier parent — fallback si /data non monté
+_db_dir = os.path.dirname(_requested)
+try:
+    if _db_dir:
+        os.makedirs(_db_dir, exist_ok=True)
+    DB_PATH = _requested
+except (PermissionError, OSError):
+    DB_PATH = os.path.join(BASE_DIR, 'restaurant.db')
+    print(f"⚠️  /data inaccessible, fallback → {DB_PATH}")
 
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")   # concurrent reads + writes
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
@@ -65,7 +72,6 @@ def init_db():
         )
     ''')
 
-    # Migration: add image_path if upgrading from older schema
     try:
         c.execute("ALTER TABLE menu_items ADD COLUMN image_path TEXT DEFAULT ''")
     except Exception:
